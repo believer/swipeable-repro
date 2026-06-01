@@ -161,6 +161,7 @@ function SwipeableRow({
   return (
     <GestureDetector gesture={panGesture}>
       <Swipeable
+        ref={rowRef}
         renderRightActions={progress => (
           <DeleteAction
             progress={progress}

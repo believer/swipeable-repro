@@ -161,6 +161,8 @@ function SwipeableRow({
   return (
     <GestureDetector gesture={panGesture}>
       <Swipeable
+        onSwipeableClose={() => isOpen.set(false)}
+        onSwipeableWillOpen={() => isOpen.set(true)}
         ref={rowRef}
         renderRightActions={progress => (
           <DeleteAction

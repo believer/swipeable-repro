@@ -218,7 +218,7 @@ function Content() {
         <Button
           title="Add item"
           onPress={() => {
-            setItems(prev => [...prev, { label: `Test ${prev.length + 1}` }])
+            setItems(prev => [...prev, { label: `Test ${Date.now()}` }])
           }}
         />
       </View>

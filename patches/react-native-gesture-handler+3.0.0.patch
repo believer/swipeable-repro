@@ -1,0 +1,83 @@
+diff --git a/node_modules/react-native-gesture-handler/src/v3/hooks/utils/configUtils.ts b/node_modules/react-native-gesture-handler/src/v3/hooks/utils/configUtils.ts
+index e43a49c..80d9732 100644
+--- a/node_modules/react-native-gesture-handler/src/v3/hooks/utils/configUtils.ts
++++ b/node_modules/react-native-gesture-handler/src/v3/hooks/utils/configUtils.ts
+@@ -21,8 +21,6 @@ export function resolveInternalConfigProps<
+   THandlerData,
+   TExtendedHandlerData extends THandlerData,
+ >(config: BaseGestureConfig<TConfig, THandlerData, TExtendedHandlerData>) {
+-  const runOnJS = maybeUnpackValue(config.runOnJS);
+-
+   if (
+     __DEV__ &&
+     isNativeAnimatedEvent(config.onUpdate) &&
+@@ -63,8 +61,6 @@ export function resolveInternalConfigProps<
+     hasWorkletEventHandlers(config) &&
+     !config.dispatchesAnimatedEvents;
+   config.needsPointerData = shouldHandleTouchEvents(config);
+-  config.dispatchesReanimatedEvents =
+-    config.shouldUseReanimatedDetector && !runOnJS;
+ }
+ 
+ export function prepareConfigForNativeSide<
+@@ -80,7 +76,10 @@ export function prepareConfigForNativeSide<
+     TConfig,
+     THandlerData,
+     TExtendedHandlerData
+-  > = {};
++  > = {
++    dispatchesReanimatedEvents:
++      config.shouldUseReanimatedDetector && !maybeUnpackValue(config.runOnJS),
++  };
+   const handlerPropsWhiteList =
+     PropsWhiteLists.get(handlerType) ?? EMPTY_WHITE_LIST;
+ 
+diff --git a/node_modules/react-native-gesture-handler/src/v3/hooks/utils/propsWhiteList.ts b/node_modules/react-native-gesture-handler/src/v3/hooks/utils/propsWhiteList.ts
+index 5beef8d..3ff8eac 100644
+--- a/node_modules/react-native-gesture-handler/src/v3/hooks/utils/propsWhiteList.ts
++++ b/node_modules/react-native-gesture-handler/src/v3/hooks/utils/propsWhiteList.ts
+@@ -42,7 +42,6 @@ export const allowedNativeProps = new Set<
+   'userSelect',
+   'enableContextMenu',
+   'touchAction',
+-  'dispatchesReanimatedEvents',
+   'dispatchesAnimatedEvents',
+   'needsPointerData',
+ ]);
+diff --git a/node_modules/react-native-gesture-handler/src/v3/hooks/utils/reanimatedUtils.ts b/node_modules/react-native-gesture-handler/src/v3/hooks/utils/reanimatedUtils.ts
+index c785103..020153a 100644
+--- a/node_modules/react-native-gesture-handler/src/v3/hooks/utils/reanimatedUtils.ts
++++ b/node_modules/react-native-gesture-handler/src/v3/hooks/utils/reanimatedUtils.ts
+@@ -38,6 +38,7 @@ export function bindSharedValues<
+   }
+ 
+   const baseListenerId = handlerTag + SHARED_VALUE_OFFSET;
++  const { shouldUseReanimatedDetector } = config;
+ 
+   const attachListener = (sharedValue: SharedValue, configKey: string) => {
+     'worklet';
+@@ -45,16 +46,14 @@ export function bindSharedValues<
+     const listenerId = baseListenerId + keyHash;
+ 
+     sharedValue.addListener(listenerId, (value) => {
+-      if (configKey === 'runOnJS') {
+-        config.dispatchesReanimatedEvents =
+-          config.shouldUseReanimatedDetector && !value;
+-
+-        updateGestureHandlerConfig(handlerTag, {
+-          dispatchesReanimatedEvents: config.dispatchesReanimatedEvents,
+-        });
+-      } else {
+-        updateGestureHandlerConfig(handlerTag, { [configKey]: value });
+-      }
++      updateGestureHandlerConfig(
++        handlerTag,
++        configKey === 'runOnJS'
++          ? {
++              dispatchesReanimatedEvents: shouldUseReanimatedDetector && !value,
++            }
++          : { [configKey]: value }
++      );
+     });
+   };
+ 
